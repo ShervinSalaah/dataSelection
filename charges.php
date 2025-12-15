@@ -1,126 +1,90 @@
-<?php 
+<?php
 session_start();
-$name = $_POST["name"];
-$account = $_POST["account"];
-$type = $_POST["type"];
-$extra = $_POST["extra"];
-$package = $_POST["package"];
 
+$name    = htmlspecialchars($_POST["name"]);
+$account = htmlspecialchars($_POST["account"]);
+$type    = $_POST["type"];
+$package = $_POST["package"];
+$extra   = (int)$_POST["extra"];
+
+/* Charges */
+$fiberCharge = ($type === "fiber") ? 760 : 0;
+
+$packageRates = [
+    "Basic"       => 760,
+    "Web Lite"    => 1520,
+    "Any Blast"   => 2340,
+    "Family Plan" => 3790
+];
+
+$packCharge = $packageRates[$package] ?? 0;
+
+/* Extra GB Calculation */
+$extraCharge = 0;
+if ($extra > 0) {
+    if ($extra <= 4) {
+        $extraCharge = $extra * 100;
+    } elseif ($extra <= 19) {
+        $extraCharge = (4 * 100) + (($extra - 4) * 85);
+    } elseif ($extra <= 49) {
+        $extraCharge = (4 * 100) + (15 * 85) + (($extra - 19) * 75);
+    } else {
+        $extraCharge = (4 * 100) + (15 * 85) + (30 * 75) + (($extra - 49) * 60);
+    }
+}
+
+$total = $fiberCharge + $packCharge + $extraCharge;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        Billing
-    </title>
+    <title>Billing Summary</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
-<h1> Internet Usage Bill of Account Number <?php echo $account; ?> </h1>
-<p> <strong> Customer Name : <?php echo $name ?> </strong> </p>
-<br>
-<p> <strong> Internet Package: <?php echo $package ?> </strong> </p>
-<br>
-<hr>
-<table rowspan = "2">
-    <tr>
-        <th></th>
-        <th> Units </th>
-        <th> Amount </th>
-</tr>
 
-<tr>
-<td>
-Rental: <?php echo $type; ?> </td>
-<td>  </td>
-<td> 
-    <?php if($type == "fiber"){
-        echo "Rs.". 760 ;
-        $fiber = 760; 
-    } else {
-        echo "";
-        $fiber = 0;
-    }
-    ?>
-</td>
-</tr>
-<tr>
-    <td> Monthly Rental </td>
-    <td> </td>
-    <td> 
-        <?php 
-        switch($package){
-            case 'Basic':
-                echo "Rs." . 760;
-                $pack = 760; 
-                break;
-            case 'Web Lite' : 
-                echo "Rs." . 1520;
-                $pack = 1520;
-                break;
-            case 'Any Blast' :
-                echo "Rs." . 2340; 
-                $pack = 2340;
-                break;
-             case 'Family Plan' :
-                 echo "Rs." . 3790;
-                 $pack = 3790; 
-            }
-?>
-</td>
+<div class="container">
+    <h1>Internet Usage Bill</h1>
+
+    <p><strong>Customer:</strong> <?= $name ?></p>
+    <p><strong>Account Number:</strong> <?= $account ?></p>
+    <p><strong>Package:</strong> <?= $package ?></p>
+
+    <hr>
+
+    <table>
+        <tr>
+            <th>Description</th>
+            <th>Units</th>
+            <th>Amount (Rs.)</th>
         </tr>
-  <tr>
-    <td> Extra GB used </td>
-    <td>  <?php echo $extra ?> </td>
-            <td> 
-                <?php 
-               $charges = 0; 
-               if($extra<5){
-                $charges = 100 * $extra; 
-                echo "Rs." . $charges;
-                
-               }elseif($extra <20){
-                $charges = 4 * 100; 
-                $gb = $extra - 4;
-                $charges +=( $gb *85); 
-                echo "Rs." . $charges;
 
-               }elseif($extra < 50){
-                $charges = 4*100 + 85*15; 
-                $gb = $extra - 19; 
-                $charges += ($gb * 75); 
-                echo "Rs." . $charges; 
-                
-            
-               }elseif($extra >= 50){
-                $charges = 4*100 + 85*15 + 30*75; 
-                $gb = $extra - 49; 
-                $charges += ($gb * 60); 
-                echo "Rs." . $charges; 
-
-               }
-            ?>
-            </td>
-
+        <tr>
+            <td>Fiber Rental</td>
+            <td>-</td>
+            <td><?= $fiberCharge ?></td>
         </tr>
- <tr> 
-    <td> Total </td>
-    <td>  </td>
-    <td> <?php 
-$total = $charges + $pack + $fiber; 
-echo "Rs." . $total; 
 
-
-?>
-
-        </td>
-
+        <tr>
+            <td>Monthly Package Rental</td>
+            <td>-</td>
+            <td><?= $packCharge ?></td>
         </tr>
-        </table>
 
+        <tr>
+            <td>Extra Data Usage</td>
+            <td><?= $extra ?> GB</td>
+            <td><?= $extraCharge ?></td>
+        </tr>
 
+        <tr class="total-row">
+            <td>Total Payable</td>
+            <td></td>
+            <td>Rs. <?= $total ?></td>
+        </tr>
+    </table>
+</div>
 
 </body>
 </html>
